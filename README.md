@@ -9,15 +9,22 @@ This project proposes a novel anime deduplication method based on a decent VFI a
 
 Online Colab demo for AFI-ForwardDeduplicate: [[Colab]](https://github.com/Q8sh2ing/AFI-ForwardDeduplicate-Colab/blob/main/forward_dedup_Colab.ipynb)
 
-## 👀Demo Videos
+## 👀Demos Videos(BiliBili)
 ### [Jujutsu Kaisen S2 NCOP](https://www.bilibili.com/video/BV16W421N7s5/?share_source=copy_web&vd_source=8a8926eb0f1d5f0f1cab7529c8f51282)
 ### [Houseki no Kuni NCOP](https://www.bilibili.com/video/BV1py4y1A7qj/?share_source=copy_web&vd_source=8a8926eb0f1d5f0f1cab7529c8f51282)
 
-## 🔧Dependencies
-- ffmpeg
-- same as [GMFSS](https://github.com/98mxr/GMFSS_Fortuna)
-- download the [weights](https://drive.google.com/file/d/157M4i1B9hjWs1K2AZVArSulkM9qV2sdH/view?usp=sharing) and unzip it, put them to ./weights/
- 
+## 🔧Installation
+```bash
+git clone https://github.com/routineLife1/AFI-ForwardDeduplicate.git
+cd DRBA
+pip3 install -r requirements.txt
+```
+download weights from [Google Drive](https://drive.google.com/file/d/1_PjZCKso1Gpiw4V68wL1CL5kNIAmsqog/view?usp=sharing) and unzip it, put them to ./weights/
+
+
+The cupy package is included in the requirements, but its installation is optional. It is used to accelerate computation. If you encounter difficulties while installing this package, you can skip it.
+
+
 ## ⚡Usage 
 - normalize the source video to 24000/1001 fps by following command using ffmpeg **(If the INPUT video framerate is around 23.976, skip this step.)**
   ```bash
@@ -27,16 +34,9 @@ Online Colab demo for AFI-ForwardDeduplicate: [[Colab]](https://github.com/Q8sh2
 - run the follwing command to finish interpolation
   (N_FORWARD = max_consistent_deduplication_counts - 1) **(Under the most circumstances, -nf 0 can automatically determine an appropriate n_forward value)**
   ```bash
-  python interpolate_video_forward.py -i [VIDEO] -o [OUTPUTDIR] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 12 -scale [SCALE] -stf -c -half
+  python interpolate_video_forward.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 12 -scale [SCALE] -stf -c -half
   # or use the following command to export video at any frame rate
-  python interpolate_video_forward_anyfps.py -i [VIDEO] -o [OUTPUTDIR] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 12 -scale [SCALE] -stf -c
-  ```
-  
-- run the follwing command or custom command to merge the output frames with the audio of source video
-  ```bash
-  ffmpeg -r [24000/1001 * TIMES] -i [OUTPUTDIR]/%09d.png -i [VIDEO] -map 0:v -map 1:a -crf 16 -preset slow -c:v libx265 -x265-params profile=main10 -c:a copy [FINAL_OUTPUT]
-  # or use the following command to export video at any frame rate
-  ffmpeg -r [OUTPUT_FPS] -i [OUTPUTDIR]/%09d.png -i [VIDEO] -map 0:v -map 1:a -crf 16 -preset slow -c:v libx265 -x265-params profile=main10 -c:a copy [FINAL_OUTPUT]
+  python interpolate_video_forward_anyfps.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 12 -scale [SCALE] -stf -c
   ```
   
  **example(smooth a 23.976fps video with on three and interpolate it to 60fps):**
@@ -44,9 +44,7 @@ Online Colab demo for AFI-ForwardDeduplicate: [[Colab]](https://github.com/Q8sh2
   ```bash
   ffmpeg -i E:/Myvideo/01_src.mkv -crf 16 -r 24000/1001 -preset slow -c:v libx265 -x265-params profile=main10 -c:a copy E:/Myvideo/01.mkv
 
-  python interpolate_video_forward_anyfps.py -i E:/MyVideo/01.mkv -o E:/frame_seq_output -nf 2 -fps 60 -m gmfss -s -st 12 -scale 1.0 -stf -c
-
-  ffmpeg -r 60 -i E:/frame_seq_output/%09d.png -i E:/MyVideo/01.mkv -map 0:v -map 1:a -crf 16 -preset slow -c:v libx265 -x265-params profile=main10 -c:a copy E:/final_output/01.mkv
+  python interpolate_video_forward_anyfps.py -i E:/MyVideo/01.mkv -o E:/MyVideo/out.mkv -nf 2 -fps 60 -m gmfss -s -st 12 -scale 1.0 -stf -c
   ```
   
 
