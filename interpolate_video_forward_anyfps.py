@@ -52,7 +52,7 @@ parser.add_argument('-st', '--scdet_threshold', dest='scdet_threshold', type=int
                     help='scene detection threshold, same setting as SVFI')
 parser.add_argument('-stf', '--shrink_transition_frames', dest='shrink', action='store_true', default=True,
                     help='shrink the copy frames in transition to improve the smoothness')
-parser.add_argument('-c', '--enable_correct_inputs', dest='correct', action='store_true', default=True,
+parser.add_argument('-c', '--enable_correct_inputs', dest='correct', action='store_true', default=False,
                     help='correct scene start and scene end processing, (will reduce stuttering, but will slow down the speed, and may introduce blur at beginning and ending of the scenes)')
 parser.add_argument('-scale', '--scale', dest='scale', type=float, default=1.0,
                     help='flow scale, generally use 1.0 with 1080P and 0.5 with 4K resolution')

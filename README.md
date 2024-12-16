@@ -5,7 +5,7 @@
 However, with the advancement of video frame interpolation technology based on AI, it is proved feasible to repeatedly update the original frames to obtain high quality interpolated output of anime. 
 This project proposes a novel anime deduplication method based on a decent VFI algorithm of GMFSS. It does not require additional procedure of processing the frame sequence or deep neural networks, and produces smooth, high quality output by removing duplicate frames in anime adequately.
 
-![ezgif com-video-to-gif](https://github.com/hyw-dev/AFI-ForwardDeduplicate/assets/68835291/6f03dfd8-99f4-48ad-871e-91cbd704c1e5)
+![result](assert/result.gif)
 
 Online Colab demo for AFI-ForwardDeduplicate: [[Colab]](https://github.com/Q8sh2ing/AFI-ForwardDeduplicate-Colab/blob/main/forward_dedup_Colab.ipynb)
 
@@ -46,7 +46,37 @@ The cupy package is included in the requirements, but its installation is option
 
   python interpolate_video_forward_anyfps.py -i E:/MyVideo/01.mkv -o E:/MyVideo/out.mkv -nf 2 -fps 60 -m gmfss -s -st 12 -scale 1.0 -stf -c
   ```
-  
+
+**Full Usage**
+```bash
+Usage: python interpolate_video_forward_anyfps.py -i in_video -o out_video [options]...
+       
+  -h                   show this help
+  -i input             input video path (absolute path of output video)
+  -o output            output video path (absolute path of output video)
+  -fps dst_fps         target frame rate (default=60)
+  -s enable_scdet      enable scene change detection (default Enable)
+  -st scdet_threshold  scene detection threshold (default=14)
+  -hw hwaccel          enable hardware acceleration encode (default Enable) (require nvidia graph card)
+  -s scale             flow scale factor (default=1.0), generally use 1.0 with 1080P and 0.5 with 4K resolution
+  -m model_type        model type (default=gmfss)
+  -nf n_forward        max consistent deduplication counts (default=3)
+  -stf enable_stf      shrink the copy frames in transition to improve the smoothness (default True)
+  -c enable_ci         correct scene start and scene end processing (default False)
+```
+
+- input accept absolute video file path. Example: E:/input.mp4
+- output accept absolute video file path. Example: E:/output.mp4
+- dst_fps = target interpolated video frame rate. Example: 60
+- enable_scdet = enable scene change detection.
+- scdet_threshold = scene change detection threshold. The larger the value, the more sensitive the detection.
+- hwaccel = enable hardware acceleration during encoding output video.
+- scale = flow scale factor. Decrease this value to reduce the computational difficulty of the model at higher resolutions. Generally, use 1.0 for 1080P and 0.5 for 4K resolution.
+- model_type = model type. Currently, gmfss, rife and gimm is supported.
+- n_forward = max consistent deduplication counts.
+- stf = shrink the copy frames in transition to improve the smoothness.
+- ci = correct scene start and scene end processing.
+
 
 ## todo list
 - [ ] ~~**Efficiency optimization**~~ (No significant efficiency gains and increased risk of vram overflow.)
