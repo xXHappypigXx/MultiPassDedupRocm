@@ -34,9 +34,9 @@ The cupy package is included in the requirements, but its installation is option
 - run the follwing command to finish interpolation
   (N_FORWARD = max_consistent_deduplication_counts - 1) **(Under the most circumstances, -nf 0 can automatically determine an appropriate n_forward value)**
   ```bash
-  python interpolate_video_forward.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 12 -scale [SCALE] -stf -c -half
+  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 12 -scale [SCALE]
   # or use the following command to export video at any frame rate
-  python interpolate_video_forward_anyfps.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 12 -scale [SCALE] -stf -c
+  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 12 -scale [SCALE]
   ```
   
  **example(smooth a 23.976fps video with on three and interpolate it to 60fps):**
@@ -44,25 +44,23 @@ The cupy package is included in the requirements, but its installation is option
   ```bash
   ffmpeg -i E:/Myvideo/01_src.mkv -crf 16 -r 24000/1001 -preset slow -c:v libx265 -x265-params profile=main10 -c:a copy E:/Myvideo/01.mkv
 
-  python interpolate_video_forward_anyfps.py -i E:/MyVideo/01.mkv -o E:/MyVideo/out.mkv -nf 2 -fps 60 -m gmfss -s -st 12 -scale 1.0 -stf -c
+  python infer.py -i E:/MyVideo/01.mkv -o E:/MyVideo/out.mkv -nf 2 -fps 60 -m gmfss -s -st 0.3 -scale 1.0
   ```
 
 **Full Usage**
 ```bash
-Usage: python interpolate_video_forward_anyfps.py -i in_video -o out_video [options]...
+Usage: python infer.py -i in_video -o out_video [options]...
        
   -h                   show this help
   -i input             input video path (absolute path of output video)
   -o output            output video path (absolute path of output video)
   -fps dst_fps         target frame rate (default=60)
   -s enable_scdet      enable scene change detection (default Enable)
-  -st scdet_threshold  scene detection threshold (default=14)
+  -st scdet_threshold  ssim scene detection threshold (default=0.3)
   -hw hwaccel          enable hardware acceleration encode (default Enable) (require nvidia graph card)
   -s scale             flow scale factor (default=1.0), generally use 1.0 with 1080P and 0.5 with 4K resolution
   -m model_type        model type (default=gmfss)
   -nf n_forward        max consistent deduplication counts (default=3)
-  -stf enable_stf      shrink the copy frames in transition to improve the smoothness (default True)
-  -c enable_ci         correct scene start and scene end processing (default False)
 ```
 
 - input accept absolute video file path. Example: E:/input.mp4
@@ -74,14 +72,10 @@ Usage: python interpolate_video_forward_anyfps.py -i in_video -o out_video [opti
 - scale = flow scale factor. Decrease this value to reduce the computational difficulty of the model at higher resolutions. Generally, use 1.0 for 1080P and 0.5 for 4K resolution.
 - model_type = model type. Currently, gmfss, rife and gimm is supported.
 - n_forward = max consistent deduplication counts.
-- stf = shrink the copy frames in transition to improve the smoothness.
-- ci = correct scene start and scene end processing.
 
 
 ## todo list
-- [ ] ~~**Efficiency optimization**~~ (No significant efficiency gains and increased risk of vram overflow.)
-- [ ] ~~**Attempt to accurately determine transition even in the queue_input**~~ (The implementation code is too complex, and it's effect is not obvious to improve)
-- [x] **Improve the smoothness By reducing transition frames to one frame and allocate them to the end of the scene**
+- [x] **Efficiency optimization**
 - [ ] **Explain why this method is effective and write a guidence on how to support other vfi algorithms**
 - [x] **Implement any framerate support for ForwardDeduplicate (smooth interpolation method)**
 
@@ -99,4 +93,4 @@ Usage: python interpolate_video_forward_anyfps.py -i in_video -o out_video [opti
 Thanks for [Q8sh2ing](https://github.com/Q8sh2ing) implement the Online Colab Demo.
 
 ## Reference
-[SpatiotemporalResampling](https://github.com/hyw-dev/SpatiotemporalResampling) [GMFSS](https://github.com/98mxr/GMFSS_Fortuna) [Practical-RIFE](https://github.com/hzwer/Practical-RIFE)
+[SpatiotemporalResampling](https://github.com/hyw-dev/SpatiotemporalResampling) [GMFSS](https://github.com/98mxr/GMFSS_Fortuna) [Practical-RIFE](https://github.com/hzwer/Practical-RIFE) [GIMM-VFI](https://github.com/GSeanCDAT/GIMM-VFI)
