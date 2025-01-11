@@ -34,9 +34,9 @@ The cupy package is included in the requirements, but its installation is option
 - run the follwing command to finish interpolation
   (N_FORWARD = max_consistent_deduplication_counts - 1) **(Under the most circumstances, -nf 0 can automatically determine an appropriate n_forward value)**
   ```bash
-  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 12 -scale [SCALE]
+  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 0.3 -scale [SCALE]
   # or use the following command to export video at any frame rate
-  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 12 -scale [SCALE]
+  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 0.3 -scale [SCALE]
   ```
   
  **example(smooth a 23.976fps video with on three and interpolate it to 60fps):**
