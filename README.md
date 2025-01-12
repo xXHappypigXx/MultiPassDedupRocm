@@ -1,9 +1,10 @@
-# 📖AFI-ForwardDeduplicate
+# 📖MultiPassDedup
 
 ### Efficient Deduplicate for Anime Video Frame Interpolation
-> When performing frame interpolation on anime footage, conventional de-duplicate approach such as locating duplicate frames and removal, time remapping, have many drawbacks, like losing textures of background, failure to correctly handle multiple characters drawn in different cadence in a single scene. Therefore, they cannot be applied in production effectively. 
-However, with the advancement of video frame interpolation technology based on AI, it is proved feasible to repeatedly update the original frames to obtain high quality interpolated output of anime. 
-This project proposes a novel anime deduplication method based on a decent VFI algorithm of GMFSS. It does not require additional procedure of processing the frame sequence or deep neural networks, and produces smooth, high quality output by removing duplicate frames in anime adequately.
+> When performing frame interpolation on anime footage, conventional deduplication methods often rely on  identification, which has many drawbacks, such as losing background textures and failing to correctly handle multiple characters drawn with different cadences in the same scene.
+> 
+> Through observation and summarization of patterns in anime videos, we found that repeatedly updating the original frames provides an easier and more effective solution to these issues.
+Therefore, we developed this project to implement this approach. Combined with the powerful GMFSS interpolation algorithm, we can achieve excellent results in most anime scenarios.
 
 ![result](assert/result.gif)
 
