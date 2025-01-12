@@ -8,7 +8,7 @@ Therefore, we developed this project to implement this approach. Combined with t
 
 ![result](assert/result.gif)
 
-Online Colab demo for AFI-ForwardDeduplicate: [[Colab]](https://github.com/Q8sh2ing/AFI-ForwardDeduplicate-Colab/blob/main/forward_dedup_Colab.ipynb)
+Online Colab demo for MultiPassDedup(under maintenance): [Colab](https://github.com/Q8sh2ing/AFI-ForwardDeduplicate-Colab/blob/main/forward_dedup_Colab.ipynb)
 
 ## 👀Demos Videos(BiliBili)
 ### [Jujutsu Kaisen S2 NCOP](https://www.bilibili.com/video/BV16W421N7s5/?share_source=copy_web&vd_source=8a8926eb0f1d5f0f1cab7529c8f51282)
@@ -16,7 +16,7 @@ Online Colab demo for AFI-ForwardDeduplicate: [[Colab]](https://github.com/Q8sh2
 
 ## 🔧Installation
 ```bash
-git clone https://github.com/routineLife1/AFI-ForwardDeduplicate.git
+git clone https://github.com/routineLife1/MultiPassDedup.git
 cd DRBA
 pip3 install -r requirements.txt
 ```
@@ -33,11 +33,11 @@ The cupy package is included in the requirements, but its installation is option
   ```
 - open the video and check out it's max consistent deduplication counts, (3 -> on Three, 2 -> on Two, 0 -> AUTO) **(If the INPUT video framerate is around 23.976, skip this step.)**
 - run the follwing command to finish interpolation
-  (N_FORWARD = max_consistent_deduplication_counts - 1) **(Under the most circumstances, -nf 0 can automatically determine an appropriate n_forward value)**
+  (N_PASS = max_consistent_deduplication_counts) **(Under the most circumstances, -np 0 can automatically determine an appropriate n_pass value)**
   ```bash
-  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -t [TIMES] -m [MODEL_TYPE] -s -st 0.3 -scale [SCALE]
+  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -np [N_PASS] -t [TIMES] -m [MODEL_TYPE] -s -st 0.3 -scale [SCALE]
   # or use the following command to export video at any frame rate
-  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -nf [N_FORWARD] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 0.3 -scale [SCALE]
+  python infer.py -i [VIDEO] -o [VIDEO_OUTPUT] -np [N_PASS] -fps [OUTPUT_FPS] -m [MODEL_TYPE] -s -st 0.3 -scale [SCALE]
   ```
   
  **example(smooth a 23.976fps video with on three and interpolate it to 60fps):**
@@ -45,7 +45,7 @@ The cupy package is included in the requirements, but its installation is option
   ```bash
   ffmpeg -i E:/Myvideo/01_src.mkv -crf 16 -r 24000/1001 -preset slow -c:v libx265 -x265-params profile=main10 -c:a copy E:/Myvideo/01.mkv
 
-  python infer.py -i E:/MyVideo/01.mkv -o E:/MyVideo/out.mkv -nf 2 -fps 60 -m gmfss -s -st 0.3 -scale 1.0
+  python infer.py -i E:/MyVideo/01.mkv -o E:/MyVideo/out.mkv -np 3 -fps 60 -m gmfss -s -st 0.3 -scale 1.0
   ```
 
 **Full Usage**
@@ -61,7 +61,7 @@ Usage: python infer.py -i in_video -o out_video [options]...
   -hw hwaccel          enable hardware acceleration encode (default Enable) (require nvidia graph card)
   -s scale             flow scale factor (default=1.0), generally use 1.0 with 1080P and 0.5 with 4K resolution
   -m model_type        model type (default=gmfss)
-  -nf n_forward        max consistent deduplication counts (default=3)
+  -np n_pass           max consistent deduplication counts (default=3)
 ```
 
 - input accept absolute video file path. Example: E:/input.mp4
@@ -72,24 +72,16 @@ Usage: python infer.py -i in_video -o out_video [options]...
 - hwaccel = enable hardware acceleration during encoding output video.
 - scale = flow scale factor. Decrease this value to reduce the computational difficulty of the model at higher resolutions. Generally, use 1.0 for 1080P and 0.5 for 4K resolution.
 - model_type = model type. Currently, gmfss, rife and gimm is supported.
-- n_forward = max consistent deduplication counts.
-
-
-## todo list
-- [x] **Efficiency optimization**
-- [ ] **Explain why this method is effective and write a guidence on how to support other vfi algorithms**
-- [x] **Implement any framerate support for ForwardDeduplicate (smooth interpolation method)**
+- n_pass = max consistent deduplication counts.
 
 ## limitations
-> The "n_forward" parameter acts like the number of times the algorithm performs Spatiotemporal TTA (Spatiotemporal Test Time Augmentation) operations.
+> The "n_pass" parameter acts like the number of times the algorithm performs Spatiotemporal TTA (Spatiotemporal Test Time Augmentation) operations.
 > Performing too many TTA operations may further improve smoothness and interpolation performance but lead to blurriness.
 > 
 > This method will change the animation rhythm to a certain extent
 
-## Projects that use AFI-ForwardDeduplicate
-[SVFI(commercial software)](https://store.steampowered.com/app/1692080/SVFI/)
-
 ## 🤗 Acknowledgement
+This project is supported by [SVFI](https://doc.svfi.group/) Development Team.
 
 Thanks for [Q8sh2ing](https://github.com/Q8sh2ing) implement the Online Colab Demo.
 
