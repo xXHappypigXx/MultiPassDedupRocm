@@ -21,12 +21,12 @@ if torch.cuda.is_available():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Interpolation a video with AFI-ForwardDeduplicate')
+    parser = argparse.ArgumentParser(description='Interpolation a video with MultiPassDedup')
     parser.add_argument('-i', '--video', dest='video', type=str, required=True, help='absolute path of input video')
     parser.add_argument('-o', '--video_output', dest='video_output', required=True, type=str, default='output',
                         help='absolute path of output video')
-    parser.add_argument('-nf', '--n_forward', dest='n_forward', type=int, default=2,
-                        help='the value of parameter n_forward')
+    parser.add_argument('-np', '--n_pass', dest='n_pass', type=int, default=2,
+                        help='the value of parameter n_pass')
     parser.add_argument('-fps', '--target_fps', dest='target_fps', type=float, default=60, help='interpolate to ? fps')
     parser.add_argument('-t', '--times', dest='times', type=int, default=-1, help='interpolate to ?x fps')
     parser.add_argument('-m', '--model_type', dest='model_type', type=str, default='gmfss',
@@ -70,7 +70,7 @@ def pass_infer(queue_idx: int):
     idx = 0
     i0 = inp_queue.get()
     if i0 is None:
-        raise ValueError(f"video doesn't contains enough frames for infer with n_forward={n_forward}")
+        raise ValueError(f"video doesn't contains enough frames for infer with n_pass={n_pass}")
 
     size = get_valid_net_inp_size(i0, model.scale, div=model.pad_size)
     src_size, dst_size = size['src_size'], size['dst_size']
@@ -110,7 +110,7 @@ def pass_infer(queue_idx: int):
 if __name__ == '__main__':
     args = parse_args()
     model_type = args.model_type
-    n_forward = args.n_forward  # max_consistent_deduplication_counts - 1
+    n_pass = args.n_pass  # max_consistent_deduplication_counts - 1
     target_fps = args.target_fps
     times = args.times  # interpolation ratio >= 2
     enable_scdet = args.enable_scdet  # enable scene change detection
@@ -133,12 +133,12 @@ if __name__ == '__main__':
     if target_fps <= src_fps:
         raise ValueError(f'dst fps should be greater than src fps, but got tar_fps={target_fps} and src_fps={src_fps}')
 
-    if n_forward == 0:
-        n_forward = math.ceil(src_fps / 24000 * 1001) * 2
+    if n_pass == 0:
+        n_pass = math.ceil(src_fps / 24000 * 1001) * 2
 
     pbar = tqdm(total=video_io.total_frames_count)
     mapper = TMapper(src_fps, target_fps, times)
-    queues = [Queue(maxsize=100) for _ in range(n_forward - 1)]
+    queues = [Queue(maxsize=100) for _ in range(n_pass - 1)]
     lock = Lock()  # global lock
     event = threading.Event()
 
