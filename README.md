@@ -86,4 +86,4 @@ This project is supported by [SVFI](https://doc.svfi.group/) Development Team.
 Thanks for [Q8sh2ing](https://github.com/Q8sh2ing) implement the Online Colab Demo.
 
 ## Reference
-[SpatiotemporalResampling](https://github.com/hyw-dev/SpatiotemporalResampling) [GMFSS](https://github.com/98mxr/GMFSS_Fortuna) [Practical-RIFE](https://github.com/hzwer/Practical-RIFE) [GIMM-VFI](https://github.com/GSeanCDAT/GIMM-VFI)
+[GMFSS](https://github.com/98mxr/GMFSS_Fortuna) [Practical-RIFE](https://github.com/hzwer/Practical-RIFE) [GIMM-VFI](https://github.com/GSeanCDAT/GIMM-VFI)
