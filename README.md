@@ -74,12 +74,6 @@ Usage: python infer.py -i in_video -o out_video [options]...
 - model_type = model type. Currently, gmfss, rife and gimm is supported.
 - n_pass = max consistent deduplication counts.
 
-## limitations
-> The "n_pass" parameter acts like the number of times the algorithm performs Spatiotemporal TTA (Spatiotemporal Test Time Augmentation) operations.
-> Performing too many TTA operations may further improve smoothness and interpolation performance but lead to blurriness.
-> 
-> This method will change the animation rhythm to a certain extent
-
 ## 🤗 Acknowledgement
 This project is supported by [SVFI](https://doc.svfi.group/) Development Team.
 
