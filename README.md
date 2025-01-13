@@ -1,14 +1,14 @@
 # 📖MultiPassDedup
 
 ### Efficient Deduplicate for Anime Video Frame Interpolation
-> When performing frame interpolation on anime footage, conventional deduplication methods often rely on  identification, which has many drawbacks, such as losing background textures and failing to correctly handle multiple characters drawn with different cadences in the same scene.
+> When performing frame interpolation on anime footage, conventional deduplication methods often rely on identification, which has many drawbacks, such as losing background textures and failing to correctly handle multiple characters drawn with different cadences in the same scene.
 > 
 > Through observation and summarization of patterns in anime videos, we found that repeatedly updating the original frames provides an easier and more effective solution to these issues.
 Therefore, we developed this project to implement this approach. Combined with the powerful GMFSS interpolation algorithm, we can achieve excellent results in most anime scenarios.
 
 ![result](assert/result.gif)
 
-Online Colab demo for MultiPassDedup(under maintenance): [Colab](https://github.com/Q8sh2ing/AFI-ForwardDeduplicate-Colab/blob/main/forward_dedup_Colab.ipynb)
+<a href="MultiPassDedup.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>
 
 ## 👀Demos Videos(BiliBili)
 ### [Jujutsu Kaisen S2 NCOP](https://www.bilibili.com/video/BV16W421N7s5/?share_source=copy_web&vd_source=8a8926eb0f1d5f0f1cab7529c8f51282)
