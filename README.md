@@ -8,7 +8,7 @@ Therefore, we developed this project to implement this approach. Combined with t
 
 ![result](assert/result.gif)
 
-<a href="MultiPassDedup.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>
+<a href="https://colab.research.google.com/drive/1nEvKPGeM02rKlOn_MiNXWXwb2X9r5FrE?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>
 
 ## 👀Demos Videos(BiliBili)
 ### [Jujutsu Kaisen S2 NCOP](https://www.bilibili.com/video/BV16W421N7s5/?share_source=copy_web&vd_source=8a8926eb0f1d5f0f1cab7529c8f51282)
