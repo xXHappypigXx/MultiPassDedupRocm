@@ -10,10 +10,7 @@ easydict==1.9
 einops==0.6.1
 imageio==2.31.2
 importlib-metadata==6.7.0
-oauthlib==3.2.2
 omegaconf==2.3.0
-packaging==23.2
-pickleshare==0.7.5
 Pillow==9.5.0
 protobuf==3.20.0
 safetensors==0.4.2

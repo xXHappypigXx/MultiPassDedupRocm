@@ -20,7 +20,7 @@ git clone https://github.com/routineLife1/MultiPassDedup.git
 cd DRBA
 pip3 install -r requirements.txt
 ```
-download weights from [Google Drive](https://drive.google.com/file/d/1_PjZCKso1Gpiw4V68wL1CL5kNIAmsqog/view?usp=sharing) and unzip it, put them to ./weights/
+download weights from [Google Drive](https://drive.google.com/file/d/1gXyqRiLgZ0sQEuDl4vbbxIgbUvg3k50x/view?usp=sharing) and unzip it, put them to ./weights/
 
 
 The cupy package is included in the requirements, but its installation is optional. It is used to accelerate computation. If you encounter difficulties while installing this package, you can skip it.
