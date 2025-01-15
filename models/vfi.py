@@ -64,41 +64,49 @@ class VFI:
 
     @torch.inference_mode()
     def gen_ts_frame(self, x, y, ts):
+        _outputs = list()
+        head = [x] if 0 in ts else []
+        tail = [y] if 1 in ts else []
+        if 0 in ts:
+            ts.remove(0)
+        if 1 in ts:
+            ts.remove(1)
         with torch.autocast(str(self.device)):
-            _outputs = list()
             _reuse_things = self.model.reuse(x, y, self.scale) if self.model_type == 'gmfss' else None
-            for t in ts:
-                if self.model_type == 'rife':
-                    scale_list = [8 / self.scale, 4 / self.scale, 2 / self.scale, 1 / self.scale]
-                    _out = self.model(torch.cat((x, y), dim=1), t, scale_list)
+            if self.model_type in ['rife', 'gmfss']:
+                for t in ts:
+                    if self.model_type == 'rife':
+                        scale_list = [8 / self.scale, 4 / self.scale, 2 / self.scale, 1 / self.scale]
+                        _out = self.model(torch.cat((x, y), dim=1), t, scale_list)
+                    elif self.model_type == 'gmfss':
+                        _out = self.model.inference(x, y, _reuse_things, t)
                     _outputs.append(_out)
-                elif self.model_type == 'gmfss':
-                    _out = self.model.inference(x, y, _reuse_things, t)
-                    _outputs.append(_out)
-            if self.model_type == 'gimm':
+            elif self.model_type == 'gimm':
                 xs = torch.cat((x.unsqueeze(2), y.unsqueeze(2)), dim=2).to(
                     self.device, non_blocking=True
                 )
                 self.model.zero_grad()
-                with torch.no_grad():
-                    coord_inputs = [
-                        (
-                            self.model.sample_coord_input(
-                                xs.shape[0],
-                                xs.shape[-2:],
-                                [t],
-                                device=xs.device,
-                                upsample_ratio=self.scale,
-                            ),
-                            None,
-                        )
-                        for t in ts
-                    ]
-                    timesteps = [
-                        t * torch.ones(xs.shape[0]).to(xs.device).to(torch.float)
-                        for t in ts
-                    ]
-                    all_outputs = self.model(xs, coord_inputs, t=timesteps, ds_factor=self.scale)
-                    return all_outputs["imgt_pred"]
+                coord_inputs = [
+                    (
+                        self.model.sample_coord_input(
+                            xs.shape[0],
+                            xs.shape[-2:],
+                            [t],
+                            device=xs.device,
+                            upsample_ratio=self.scale,
+                        ),
+                        None,
+                    )
+                    for t in ts
+                ]
+                timesteps = [
+                    t * torch.ones(xs.shape[0]).to(xs.device).to(torch.float)
+                    for t in ts
+                ]
+                all_outputs = self.model(xs, coord_inputs, t=timesteps, ds_factor=self.scale)
+
+                _outputs = all_outputs["imgt_pred"]
+
+            _outputs = head + _outputs + tail
 
             return _outputs
