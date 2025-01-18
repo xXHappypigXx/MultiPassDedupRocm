@@ -87,7 +87,7 @@ def pass_infer(queue_idx: int):
 
         I1 = to_inp(i1, dst_size)
 
-        scene_change = check_scene(I0, I1, scdet_threshold=scdet_threshold)
+        scene_change = check_scene(I0, I1, scdet_threshold=scdet_threshold) if enable_scdet else False
 
         ts = [0.5]
         if tail:
