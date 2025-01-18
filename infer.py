@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('-i', '--video', dest='video', type=str, required=True, help='absolute path of input video')
     parser.add_argument('-o', '--video_output', dest='video_output', required=True, type=str, default='output',
                         help='absolute path of output video')
-    parser.add_argument('-np', '--n_pass', dest='n_pass', type=int, default=2,
+    parser.add_argument('-np', '--n_pass', dest='n_pass', type=int, default=3,
                         help='the value of parameter n_pass')
     parser.add_argument('-fps', '--target_fps', dest='target_fps', type=float, default=60, help='interpolate to ? fps')
     parser.add_argument('-t', '--times', dest='times', type=int, default=-1, help='interpolate to ?x fps')
