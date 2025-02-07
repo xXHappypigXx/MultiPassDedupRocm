@@ -80,7 +80,7 @@ def pass_infer(queue_idx: int):
     while True:
         i1 = inp_queue.get()
         if i1 is None:
-            out_queue.put(i1)
+            out_queue.put(i0)
             out_queue.put(None)
             event.set()
             break
