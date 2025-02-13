@@ -1,13 +1,10 @@
 import os
-import threading
-from threading import Lock
 import torch
 from tqdm import tqdm
 import warnings
 import argparse
 import time
 import math
-from queue import Queue
 from models.vfi import VFI
 from models.utils.tools import *
 
@@ -53,58 +50,58 @@ def load_model():
     return model
 
 
-def pass_infer(queue_idx: int):
-    head = queue_idx == 0
-    tail = queue_idx == len(queues)
+def infer(cache_idx):
+    global cache, head_end, tail_end, frame_idx  # Variables modified in this function are declared as global
 
-    if head:
-        inp_queue = video_io.read_buffer
-    else:
-        inp_queue = queues[queue_idx - 1]
+    head = cache_idx == 0
+    tail = cache_idx == len(cache.keys()) - 1
 
-    if tail:
-        out_queue = video_io.write_buffer
-    else:
-        out_queue = queues[queue_idx]
-
-    idx = 0
-    i0 = inp_queue.get()
-    if i0 is None:
-        raise ValueError(f"video doesn't contains enough frames for infer with n_pass={n_pass}")
-
-    size = get_valid_net_inp_size(i0, model.scale, div=model.pad_size)
-    src_size, dst_size = size['src_size'], size['dst_size']
-
-    I0 = to_inp(i0, dst_size)
-    out_queue.put(i0)
-    while True:
-        i1 = inp_queue.get()
+    # Only the head cache reads frames from video_io
+    if head and len(cache[cache_idx]) != 2:
+        i1 = video_io.read_frame()
         if i1 is None:
-            out_queue.put(i0)
-            out_queue.put(None)
-            event.set()
-            break
+            head_end = True
+            # When no frames available, repeat last frame in cache to prevent missing end frames
+            cache[cache_idx].append(cache[cache_idx][0])
+        else:
+            I1 = to_inp(i1, dst_size)
+            cache[cache_idx].append(I1)
 
-        I1 = to_inp(i1, dst_size)
-
-        scene_change = check_scene(I0, I1, scdet_threshold=scdet_threshold) if enable_scdet else False
+    # When both I0 and I1 are available, calculate intermediate frame Imid for next cache layer or output Imids
+    if len(cache[cache_idx]) == 2:
+        inp0 = cache[cache_idx][0]
+        inp1 = cache[cache_idx][1]
 
         ts = [0.5]
         if tail:
-            ts = mapper.get_range_timestamps(idx, idx + 1, lclose=True, rclose=False, normalize=True)
+            ts = mapper.get_range_timestamps(frame_idx, frame_idx + 1, lclose=True, rclose=head_end, normalize=True)
+        if enable_scdet and check_scene(inp0, inp1, scdet_threshold):
+            ts = [0 for _ in ts]
 
-        if scene_change:
-            output = [I0 for _ in ts]
+        if not tail:
+            cache[cache_idx + 1].append(
+                model.gen_ts_frame(inp0, inp1, ts)[0]
+            )
         else:
-            with lock:  # avoid vram boom
-                output = model.gen_ts_frame(I0, I1, ts)
+            outputs = model.gen_ts_frame(inp0, inp1, ts)
+            for out in outputs:
+                video_io.write_frame(to_out(out, src_size))
+            frame_idx += 1
+            if head_end:
+                # print('tail end')
+                tail_end = True
 
-        for out in output:
-            out_queue.put(to_out(out, src_size))
-
-        I0 = I1
-        idx += 1
-        pbar.update(1 / (len(queues) + 1))
+        cache[cache_idx].pop(0)  # if-elif-else are checked sequentially, subsequent branches skipped after match
+    elif len(cache[cache_idx]) == 1:
+        # When frames are missing, fetch from previous layer. Repeat last frame when end flag encountered
+        if head_end:
+            cache[cache_idx].append(cache[cache_idx][0])
+            infer(cache_idx)
+        else:
+            infer(cache_idx - 1)
+    else:
+        # This branch should never be executed
+        raise ValueError(f"cache[{cache_idx}] should have 1 or 2 elements, but got {len(cache[cache_idx])}")
 
 
 if __name__ == '__main__':
@@ -136,21 +133,30 @@ if __name__ == '__main__':
     if n_pass == 0:
         n_pass = math.ceil(src_fps / 24000 * 1001) * 2
 
-    pbar = tqdm(total=video_io.total_frames_count)
+    pbar = tqdm(total=video_io.total_frames_count + 1)
     mapper = TMapper(src_fps, target_fps, times)
-    queues = [Queue(maxsize=100) for _ in range(n_pass - 1)]
-    lock = Lock()  # global lock
-    event = threading.Event()
 
-    threads = []
-    for _idx in range(len(queues) + 1):
-        thread = threading.Thread(target=pass_infer, args=(_idx,))
-        thread.start()
-        threads.append(thread)
+    i0 = video_io.read_frame()
+    if i0 is None:
+        raise ValueError(f"video doesn't contains any frames")
+    size = get_valid_net_inp_size(i0, model.scale, div=model.pad_size)
+    src_size, dst_size = size['src_size'], size['dst_size']
+    I0 = to_inp(i0, dst_size)
 
-    for thread in threads:
-        event.wait()
-        event.clear()
+    # The cache is structured as {cache_idx: [I0, I1]},
+    # with each layer initialized as {cache_idx: [I0]} to prevent missing initial frame.
+    cache = {
+        cache_idx: [I0] for cache_idx in range(n_pass)
+    }
+
+    head_end = False  # end sign for frameReader
+    tail_end = False  # end sign for frameWriter
+    frame_idx = 0  # frame index for only the last pass
+
+    while not tail_end:
+        for i in range(n_pass):
+            infer(i)
+        pbar.update(1)
 
     print('Wait for all frames to be exported...')
     while not video_io.finish_writing():
