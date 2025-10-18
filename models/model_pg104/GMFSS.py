@@ -7,19 +7,7 @@ from models.model_pg104.MetricNet import MetricNet
 from models.model_pg104.FeatureNet import FeatureNet
 from models.model_pg104.FusionNet import GridNet
 
-HAS_CUDA = True
-try:
-    import cupy
-    if cupy.cuda.get_cuda_path() == None:
-        HAS_CUDA = False
-except Exception:
-    HAS_CUDA = False
-
-if HAS_CUDA:
-    from models.softsplat.softsplat import softsplat as warp
-else:
-    print("System does not have CUDA installed, falling back to PyTorch")
-    from models.softsplat.softsplat_torch import softsplat as warp
+from models.softsplat.softsplat_torch import softsplat as warp
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

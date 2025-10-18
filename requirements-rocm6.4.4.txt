@@ -1,0 +1,23 @@
+ffmpeg-python>=0.2.0
+numpy>=1.16, <=1.23.5
+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.4/pytorch_triton_rocm-3.2.0%2Brocm6.4.4.git20943800-cp39-cp39-linux_x86_64.whl
+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.4/torch-2.6.0%2Brocm6.4.4.git2feede28-cp39-cp39-linux_x86_64.whl
+https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.4/torchvision-0.21.0%2Brocm6.4.4.git4040d51f-cp39-cp39-linux_x86_64.whl
+tqdm>=4.35.0
+opencv-python>=4.1.2
+decorator==5.1.1
+easydict==1.9
+einops==0.6.1
+imageio==2.31.2
+importlib-metadata==6.7.0
+omegaconf==2.3.0
+Pillow==9.5.0
+protobuf==3.20.0
+safetensors==0.4.2
+scikit-image==0.19.3
+scikit-learn==0.24.0
+scipy==1.7.3
+tensorboard==2.3.0
+tensorboard-plugin-wit==1.8.1
+timm==0.4.12
+yacs==0.1.6

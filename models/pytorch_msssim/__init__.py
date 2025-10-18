@@ -103,8 +103,8 @@ def ssim_matlab(img1, img2, window_size=11, window=None, size_average=True, full
         window = create_window_3d(real_size, channel=1).to(img1.device)
         # Channel is set to 1 since we consider color images as volumetric images
 
-    img1 = img1.unsqueeze(1)
-    img2 = img2.unsqueeze(1)
+    img1 = img1.float().unsqueeze(1)
+    img2 = img2.float().unsqueeze(1)
 
     mu1 = F.conv3d(F.pad(img1, (5, 5, 5, 5, 5, 5), mode='replicate'), window, padding=padd, groups=1)
     mu2 = F.conv3d(F.pad(img2, (5, 5, 5, 5, 5, 5), mode='replicate'), window, padding=padd, groups=1)

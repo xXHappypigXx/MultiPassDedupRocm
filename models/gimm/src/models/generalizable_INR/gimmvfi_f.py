@@ -22,19 +22,7 @@ from .flowformer import initialize_Flowformer
 from .modules.fi_utils import normalize_flow, unnormalize_flow, warp, resize
 from .raft.corr import BidirCorrBlock
 
-HAS_CUDA = True
-try:
-    import cupy
-    if cupy.cuda.get_cuda_path() == None:
-        HAS_CUDA = False
-except Exception:
-    HAS_CUDA = False
-
-if HAS_CUDA:
-    from models.softsplat.softsplat import softsplat
-else:
-    print("System does not have CUDA installed, falling back to PyTorch")
-    from models.softsplat.softsplat_torch import softsplat
+from models.softsplat.softsplat_torch import softsplat
 
 
 class GIMMVFI_F(nn.Module):

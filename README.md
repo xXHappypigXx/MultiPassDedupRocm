@@ -1,5 +1,7 @@
 # 📖MultiPassDedup
 
+**This is a fork from [routineLife1/MultiPassDedup](https://github.com/routineLife1/MultiPassDedup), patched to use ROCm and VA-API instead of CUDA and nvenc**
+
 ### Efficient Deduplicate for Anime Video Frame Interpolation
 > When performing frame interpolation on anime footage, conventional deduplication methods often rely on identification, which has many drawbacks, such as losing background textures and failing to correctly handle multiple characters drawn with different cadences in the same scene.
 > 
@@ -15,11 +17,19 @@ Therefore, we developed this project to implement this approach. Combined with t
 ### [Houseki no Kuni NCOP](https://www.bilibili.com/video/BV1py4y1A7qj/?share_source=copy_web&vd_source=8a8926eb0f1d5f0f1cab7529c8f51282)
 
 ## 🔧Installation
+Requires Python 3.9 (I think)
+
+**Note! The original project had unsolvable requirements, typing_extensions==4.7.1 was required but the oldest allowed verion of torch, 2.5.1, depends on typing_extensions>=4.8.0. I had to remove the typing_extensions==4.7.1 requirement.** 
 ```bash
 git clone https://github.com/routineLife1/MultiPassDedup.git
 cd DRBA
-pip3 install -r requirements.txt
+# Choose packages for your ROCm version
+pip3 install -r requirements-rocm7.0.2.txt
+pip3 install -r requirements-rocm7.0.0.txt
+pip3 install -r requirements-rocm6.4.4.txt
 ```
+If your version is not present, manually update the requirements file from the [ROCm python packages index](https://repo.radeon.com/rocm/manylinux/) (Only 7.0.2 tested)
+
 download weights from [Google Drive](https://drive.google.com/file/d/1gXyqRiLgZ0sQEuDl4vbbxIgbUvg3k50x/view?usp=sharing) and unzip it, put them to ./weights/
 
 

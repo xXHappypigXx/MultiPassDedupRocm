@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument('-scale', '--scale', dest='scale', type=float, default=1.0,
                         help='flow scale, generally use 1.0 with 1080P and 0.5 with 4K resolution')
     parser.add_argument('-hw', '--hwaccel', dest='hwaccel', action='store_true', default=False,
-                        help='enable hardware acceleration encode(require nvidia graph card)')
+                        help='enable hardware acceleration encode')
     return parser.parse_args()
 
 

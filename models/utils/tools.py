@@ -9,6 +9,8 @@ import math
 from queue import Queue
 import _thread
 import subprocess
+import os
+import json
 
 
 def check_cupy_env():
@@ -153,6 +155,23 @@ def get_ones_tensor_size(size: tuple, device, dtype: torch.dtype):
     return ones_cache[k]
 
 
+def get_video_info(input_path):
+    probe_cmd = [
+        'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+        '-show_entries', 'stream=bit_rate,r_frame_rate',
+        '-of', 'json', input_path
+    ]
+    result = subprocess.run(probe_cmd, stdout=subprocess.PIPE, text=True, check=True)
+    info = json.loads(result.stdout)['streams'][0]
+
+    bitrate = int(info.get('bit_rate', 0))
+
+    num, den = map(int, info['r_frame_rate'].split('/'))
+    src_fps = num / den
+
+    return bitrate, src_fps
+
+
 class VideoFI_IO:
     def __init__(self, input_path, output_path, dst_fps=60, times=-1, hwaccel=False):
         self.video_capture = cv2.VideoCapture(input_path)
@@ -171,21 +190,34 @@ class VideoFI_IO:
         _thread.start_new_thread(self.clear_write_buffer, (self.write_buffer,))
 
     def generate_frame_renderer(self, input_path, output_path, width, height, dst_fps, hwaccel=False):
+        input_bitrate, src_fps = get_video_info(input_path)
+        scaled_bitrate = int(input_bitrate * (dst_fps / src_fps))
         encoder = 'libx264'
-        preset = 'medium'
+        preset = 'slow'
+        hwargs = []
+        vf = []
         if hwaccel:
-            encoder = 'h264_nvenc'
-            preset = 'p7'
+            encoder = 'h264_vaapi'
+            hwargs = [
+                '-hwaccel', 'vaapi',
+                '-init_hw_device', 'vaapi=va:/dev/dri/renderD128'
+            ]
+            vf = ['-vf', 'format=nv12,hwupload']
         ffmpeg_cmd = [
-            'ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-r', f'{dst_fps}',
+            'ffmpeg',
+            *hwargs,
+            '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-r', f'{dst_fps}',
             '-s', f'{width}x{height}',
             '-i', 'pipe:0', '-i', input_path,
             '-map', '0:v', '-map', '1:a?',
-            '-c:v', encoder, "-movflags", "+faststart", "-pix_fmt", "yuv420p", "-qp", "16", '-preset', preset,
-            '-c:a', 'aac', '-b:a', '320k', f'{output_path}'
+            *vf,
+            '-c:v', encoder, '-qp', '16', '-preset', preset,
+            '-b:v', f'{scaled_bitrate}', '-maxrate', f'{scaled_bitrate}', '-bufsize', f'{scaled_bitrate * 2}',
+            '-c:a', 'copy', f'{output_path}'
         ]
 
-        return subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
+        devnull = open(os.devnull, 'wb')
+        return subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stdout=devnull, stderr=devnull)
 
     def build_read_buffer(self, r_buffer, v):
         ret, __x = v.read()
