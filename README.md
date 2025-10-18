@@ -19,16 +19,16 @@ Therefore, we developed this project to implement this approach. Combined with t
 ## 🔧Installation
 Requires Python 3.9 (I think)
 
-**Note! The original project had unsolvable requirements, typing_extensions==4.7.1 was required but the oldest allowed verion of torch, 2.5.1, depends on typing_extensions>=4.8.0. I had to remove the typing_extensions==4.7.1 requirement.** 
+**Note! The original project had unsolvable requirements, typing_extensions==4.7.1 was required but the oldest allowed version of torch, 2.5.1, depends on typing_extensions>=4.8.0. I had to remove the typing_extensions==4.7.1 requirement.** 
 ```bash
 git clone https://github.com/routineLife1/MultiPassDedup.git
 cd DRBA
-# Choose packages for your ROCm version
+# Choose packages for your ROCm version (Only 7.0.2 confirmed to be working)
 pip3 install -r requirements-rocm7.0.2.txt
 pip3 install -r requirements-rocm7.0.0.txt
 pip3 install -r requirements-rocm6.4.4.txt
 ```
-If your version is not present, manually update the requirements file from the [ROCm python packages index](https://repo.radeon.com/rocm/manylinux/) (Only 7.0.2 tested)
+If your version is not present, manually update the requirements file from the [ROCm python packages index](https://repo.radeon.com/rocm/manylinux/)
 
 download weights from [Google Drive](https://drive.google.com/file/d/1gXyqRiLgZ0sQEuDl4vbbxIgbUvg3k50x/view?usp=sharing) and unzip it, put them to ./weights/
 
