@@ -253,4 +253,4 @@ class VideoFI_IO:
         if self.previous_frames:
             self.dequeue_frames()
             self.previous_frames = None
-        return self.read_buffer or self.ffmpeg_writer.stdin.closed
+        return self.ffmpeg_writer.stdin.closed
