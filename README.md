@@ -23,7 +23,7 @@ Requires Python 3.9 (I think)
 ```bash
 git clone https://github.com/routineLife1/MultiPassDedup.git
 cd DRBA
-# Choose packages for your ROCm version (Only 7.0.2 confirmed to be working)
+# Choose packages for your ROCm version (I only tested 7.0.2)
 pip3 install -r requirements-rocm7.0.2.txt
 pip3 install -r requirements-rocm7.0.0.txt
 pip3 install -r requirements-rocm6.4.4.txt

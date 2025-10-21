@@ -58,13 +58,12 @@ def infer(cache_idx):
 
     # Only the head cache reads frames from video_io
     if head and len(cache[cache_idx]) != 2:
-        i1 = video_io.read_frame()
-        if i1 is None:
+        I1 = video_io.read_frame()
+        if I1 is None:
             head_end = True
             # When no frames available, repeat last frame in cache to prevent missing end frames
             cache[cache_idx].append(cache[cache_idx][0])
         else:
-            I1 = to_inp(i1, dst_size)
             cache[cache_idx].append(I1)
 
     # When both I0 and I1 are available, calculate intermediate frame Imid for next cache layer or output Imids
@@ -84,8 +83,9 @@ def infer(cache_idx):
             )
         else:
             outputs = model.gen_ts_frame(inp0, inp1, ts)
-            for out in outputs:
-                video_io.write_frame(to_out(out, src_size))
+            event = torch.cuda.Event()
+            event.record()
+            video_io.enqueue_frames(outputs, event)
             frame_idx += 1
             if head_end:
                 # print('tail end')
@@ -133,15 +133,10 @@ if __name__ == '__main__':
     if n_pass == 0:
         n_pass = math.ceil(src_fps / 24000 * 1001) * 2
 
-    pbar = tqdm(total=video_io.total_frames_count + 1)
     mapper = TMapper(src_fps, target_fps, times)
 
-    i0 = video_io.read_frame()
-    if i0 is None:
-        raise ValueError(f"video doesn't contains any frames")
-    size = get_valid_net_inp_size(i0, model.scale, div=model.pad_size)
-    src_size, dst_size = size['src_size'], size['dst_size']
-    I0 = to_inp(i0, dst_size)
+    video_io.get_valid_net_inp_size(model.scale, model.pad_size)
+    I0 = video_io.read_frame()
 
     # The cache is structured as {cache_idx: [I0, I1]},
     # with each layer initialized as {cache_idx: [I0]} to prevent missing initial frame.
@@ -153,14 +148,15 @@ if __name__ == '__main__':
     tail_end = False  # end sign for frameWriter
     frame_idx = 0  # frame index for only the last pass
 
-    while not tail_end:
-        for i in range(n_pass):
-            infer(i)
-        pbar.update(1)
-
+    with tqdm(total=video_io.total_frames_count) as pbar:
+        while not tail_end:
+            for i in range(n_pass):
+                infer(i)
+            pbar.update(1)
+    
+    time.sleep(0.1)
     print('Wait for all frames to be exported...')
     while not video_io.finish_writing():
         time.sleep(0.1)
 
-    pbar.update(1)
     print('Done!')

@@ -13,19 +13,6 @@ import os
 import json
 
 
-def check_cupy_env():
-    SUPPORT_CUPY = True
-    try:
-        import cupy
-
-        if cupy.cuda.get_cuda_path() == None:
-            SUPPORT_CUPY = False
-    except Exception:
-        SUPPORT_CUPY = False
-
-    return SUPPORT_CUPY
-
-
 def check_scene(x1, x2, scdet_threshold=0.3):
     x1 = F.interpolate(x1, (32, 32), mode='bilinear', align_corners=False)
     x2 = F.interpolate(x2, (32, 32), mode='bilinear', align_corners=False)
@@ -38,36 +25,6 @@ def to_tensor(img, device=torch.device("cuda" if torch.cuda.is_available() else 
 
 def to_cv2(img):
     return (img[0].cpu().float().numpy().transpose(1, 2, 0) * 255.).astype(np.uint8)
-
-
-def get_valid_net_inp_size(img, scale, div=64):
-    h, w, _ = img.shape
-    src_h, src_w, _ = img.shape
-
-    if h * scale % div != 0:
-        h = (h * scale // div + 1) * div / scale
-        h = int(h)
-
-    if w * scale % div != 0:
-        w = (w * scale // div + 1) * div / scale
-        w = int(w)
-
-    return {
-        'src_size': (src_h, src_w),
-        'dst_size': (h, w),
-    }
-
-
-def to_inp(npInp, dst_size):
-    tenInp = to_tensor(npInp)
-    tenInp = resize(tenInp, dst_size)
-    return tenInp
-
-
-def to_out(tenInp, src_size):
-    tenInp = resize(tenInp, src_size)
-    npOut = to_cv2(tenInp)
-    return npOut
 
 
 def resize(tensor, size):
@@ -179,15 +136,17 @@ class VideoFI_IO:
         self.dst_fps = dst_fps
         if times != -1:
             self.dst_fps = times * self.src_fps
-        self.total_frames_count = self.video_capture.get(7)
+        self.total_frames_count = round(self.video_capture.get(7))
         self.width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.ffmpeg_writer = self.generate_frame_renderer(input_path, output_path, self.width, self.height,
                                                           self.dst_fps, hwaccel)
         self.read_buffer = Queue(maxsize=100)
-        self.write_buffer = Queue(maxsize=-1)
+        self.write_queue = Queue(maxsize=-1)
+        self.transfer_stream = torch.cuda.Stream()
+        self.previous_frames = None
         _thread.start_new_thread(self.build_read_buffer, (self.read_buffer, self.video_capture))
-        _thread.start_new_thread(self.clear_write_buffer, (self.write_buffer,))
+        _thread.start_new_thread(self.clear_write_buffer, (self.write_queue,))
 
     def generate_frame_renderer(self, input_path, output_path, width, height, dst_fps, hwaccel=False):
         input_bitrate, src_fps = get_video_info(input_path)
@@ -211,13 +170,41 @@ class VideoFI_IO:
             '-i', 'pipe:0', '-i', input_path,
             '-map', '0:v', '-map', '1:a?',
             *vf,
-            '-c:v', encoder, '-qp', '16', '-preset', preset,
+            '-c:v', encoder, '-preset', preset,
             '-b:v', f'{scaled_bitrate}', '-maxrate', f'{scaled_bitrate}', '-bufsize', f'{scaled_bitrate * 2}',
             '-c:a', 'copy', f'{output_path}'
         ]
 
         devnull = open(os.devnull, 'wb')
         return subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stdout=devnull, stderr=devnull)
+    
+    def get_valid_net_inp_size(self, scale, div=64):
+        h, w = self.height, self.width
+        src_h, src_w = self.height, self.width
+
+        if h * scale % div != 0:
+            h = (h * scale // div + 1) * div / scale
+            h = int(h)
+
+        if w * scale % div != 0:
+            w = (w * scale // div + 1) * div / scale
+            w = int(w)
+
+        self.src_size = (src_h, src_w)
+        self.dst_size = (h, w)
+
+        self.frame_buffers = [torch.zeros((1, 3, h, w), dtype=torch.float32, device="cpu", pin_memory=True) for _ in range(3 * math.ceil(self.dst_fps / self.src_fps) + 1)]
+        self.frame_buffer_idx = 0
+    
+    def to_inp(self, npInp):
+        tenInp = to_tensor(npInp)
+        tenInp = resize(tenInp, self.dst_size)
+        return tenInp
+    
+    def to_out(self, tenInp):
+        tenInp = resize(tenInp, self.src_size)
+        npOut = to_cv2(tenInp)
+        return npOut
 
     def build_read_buffer(self, r_buffer, v):
         ret, __x = v.read()
@@ -227,20 +214,43 @@ class VideoFI_IO:
         r_buffer.put(None)
         v.release()
 
-    def clear_write_buffer(self, w_buffer):
+    def clear_write_buffer(self, w_queue):
         while True:
-            item = w_buffer.get()
-            if item is None:
+            x = w_queue.get()
+            if x is None or None in x:
                 break
-            self.ffmpeg_writer.stdin.write(np.ascontiguousarray(item[:, :, ::-1]))
+            for frame_buffer_idx, event, _ in x:
+                event.synchronize()
+                self.ffmpeg_writer.stdin.write(np.ascontiguousarray(self.to_out(self.frame_buffers[frame_buffer_idx].cpu())[:, :, ::-1]))
         self.ffmpeg_writer.stdin.close()
         self.ffmpeg_writer.wait()
 
-    def write_frame(self, x):
-        self.write_buffer.put(x)
+    def enqueue_frames(self, x, infer_event):
+        if self.previous_frames:
+            self.dequeue_frames()
+        self.previous_frames = (x, infer_event)
+    
+    def dequeue_frames(self):
+        with self.transfer_stream:
+            #self.transfer_stream.wait_event(self.previous_frames[1])
+            self.previous_frames[1].synchronize()
+            frames = self.previous_frames[0]
+            for i in range(len(frames)):
+                self.frame_buffers[self.frame_buffer_idx].copy_(frames[i], non_blocking=True)
+                event = torch.cuda.Event()
+                event.record(self.transfer_stream)
+                frames[i] = (self.frame_buffer_idx, event, frames[i])
+                self.frame_buffer_idx = (self.frame_buffer_idx + 1) % len(self.frame_buffers)
+            self.write_queue.put(frames)
 
     def read_frame(self):
-        return self.read_buffer.get()
+        item = self.read_buffer.get()
+        if item is None:
+            return None
+        return self.to_inp(item)
 
     def finish_writing(self):
-        return self.write_buffer.empty() or self.ffmpeg_writer.stdin.closed
+        if self.previous_frames:
+            self.dequeue_frames()
+            self.previous_frames = None
+        return self.read_buffer or self.ffmpeg_writer.stdin.closed
