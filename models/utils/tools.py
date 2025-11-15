@@ -175,8 +175,7 @@ class VideoFI_IO:
             '-c:a', 'copy', f'{output_path}'
         ]
 
-        devnull = open(os.devnull, 'wb')
-        return subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stdout=devnull, stderr=devnull)
+        return subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     def get_valid_net_inp_size(self, scale, div=64):
         h, w = self.height, self.width
@@ -223,6 +222,7 @@ class VideoFI_IO:
                 event.synchronize()
                 self.ffmpeg_writer.stdin.write(np.ascontiguousarray(self.to_out(self.frame_buffers[frame_buffer_idx].cpu())[:, :, ::-1]))
         self.ffmpeg_writer.stdin.close()
+        self.ffmpeg_writer.stdout.close()
         self.ffmpeg_writer.wait()
 
     def enqueue_frames(self, x, infer_event):
@@ -253,4 +253,5 @@ class VideoFI_IO:
         if self.previous_frames:
             self.dequeue_frames()
             self.previous_frames = None
+            self.write_queue.put(None)
         return self.ffmpeg_writer.stdin.closed
